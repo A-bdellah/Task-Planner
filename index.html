@@ -1,0 +1,2420 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Flatpickr CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: "class", // or 'media'
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              cairo: ["Cairo", "sans-serif"],
+            },
+            colors: {
+              primary: {
+                light: "#3b82f6", // blue-500
+                DEFAULT: "#2563eb", // blue-600
+                dark: "#1d4ed8", // blue-700
+              },
+              secondary: {
+                light: "#10b981", // emerald-500
+                DEFAULT: "#059669", // emerald-600
+                dark: "#047857", // emerald-700
+              },
+              danger: {
+                light: "#f87171", // red-400 (lighter for backgrounds)
+                DEFAULT: "#ef4444", // red-500
+                dark: "#dc2626", // red-600
+              },
+              warning: {
+                light: "#fbbf24", // amber-400 (lighter for backgrounds)
+                DEFAULT: "#f59e0b", // amber-500
+                dark: "#d97706", // amber-600
+              },
+              success: {
+                light: "#4ade80", // green-400 (lighter for backgrounds)
+                DEFAULT: "#22c55e", // green-500
+                dark: "#16a34a", // green-600
+              },
+              // Light theme
+              lightBg: "#f9fafb", // gray-50
+              lightText: "#1f2937", // gray-800
+              lightCard: "#ffffff",
+              lightBorder: "#e5e7eb", // gray-200
+              // Dark theme
+              darkBg: "#111827", // gray-900
+              darkText: "#f3f4f6", // gray-100
+              darkCard: "#1f2937", // gray-800
+              darkBorder: "#374151", // gray-700
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif; /* Default font */
+        transition: background-color 0.3s, color 0.3s;
+      }
+      body.lang-ar {
+        font-family: "Cairo", sans-serif; /* Arabic font */
+      }
+      /* RTL specific adjustments for spacing */
+      html[dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]) {
+        margin-right: calc(0.25rem * var(--tw-space-x-reverse, 0));
+        margin-left: calc(0.25rem * calc(1 - var(--tw-space-x-reverse, 0)));
+      }
+      html[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+        margin-right: calc(0.5rem * var(--tw-space-x-reverse, 0));
+        margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse, 0)));
+      }
+      html[dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]) {
+        margin-right: calc(0.75rem * var(--tw-space-x-reverse, 0));
+        margin-left: calc(0.75rem * calc(1 - var(--tw-space-x-reverse, 0)));
+      }
+      html[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+        margin-right: calc(1rem * var(--tw-space-x-reverse, 0));
+        margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse, 0)));
+      }
+
+      html[dir="rtl"] .mr-2 {
+        margin-left: 0.5rem !important;
+        margin-right: 0 !important;
+      }
+      html[dir="rtl"] .ml-2 {
+        margin-right: 0.5rem !important;
+        margin-left: 0 !important;
+      }
+      html[dir="rtl"] .mr-3 {
+        margin-left: 0.75rem !important;
+        margin-right: 0 !important;
+      }
+      html[dir="rtl"] .ml-3 {
+        margin-right: 0.75rem !important;
+        margin-left: 0 !important;
+      }
+      html[dir="rtl"] .pr-10 {
+        padding-left: 2.5rem !important;
+        padding-right: 0.75rem !important;
+      }
+      html[dir="rtl"] .pr-1 {
+        padding-left: 0.25rem !important;
+        padding-right: 0 !important;
+      }
+
+      #language-toggle-button-app,
+      #language-toggle-button-auth {
+        margin-left: 0.75rem;
+      }
+      html[dir="rtl"] #language-toggle-button-app,
+      html[dir="rtl"] #language-toggle-button-auth {
+        margin-left: 0;
+        margin-right: 0.75rem;
+      }
+
+      .task-item:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+      }
+      .dark .task-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+      .progress-bar-inner {
+        transition: width 0.3s ease-in-out;
+      }
+      .task-list::-webkit-scrollbar {
+        width: 8px;
+      }
+      .task-list::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .task-list::-webkit-scrollbar-thumb {
+        background-color: #d1d5db;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      .dark .task-list::-webkit-scrollbar-thumb {
+        background-color: #4b5563;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-content {
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 400px;
+      }
+
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border-left-color: #09f;
+        animation: spin 1s ease infinite;
+        margin: 20px auto;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .password-toggle-icon {
+        position: absolute;
+        top: 50%;
+        right: 0.75rem;
+        transform: translateY(-50%);
+        cursor: pointer;
+      }
+      html[dir="rtl"] .password-toggle-icon {
+        right: auto;
+        left: 0.75rem;
+      }
+      .week-summary-day-indicator {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+
+      /* Flatpickr Custom Day Colors */
+      .flatpickr-day.day-red {
+        background: #f87171 !important;
+        color: white !important;
+        border-color: #ef4444 !important;
+      }
+      .dark .flatpickr-day.day-red {
+        background: #ef4444 !important;
+      }
+
+      .flatpickr-day.day-orange {
+        background: #fbbf24 !important;
+        color: white !important;
+        border-color: #f59e0b !important;
+      }
+      .dark .flatpickr-day.day-orange {
+        background: #f59e0b !important;
+      }
+
+      .flatpickr-day.day-green {
+        background: #4ade80 !important;
+        color: white !important;
+        border-color: #22c55e !important;
+      }
+      .dark .flatpickr-day.day-green {
+        background: #22c55e !important;
+      }
+
+      /* Ensure selected day color overrides custom colors */
+      .flatpickr-day.selected {
+        background: #2563eb !important;
+        border-color: #2563eb !important;
+        color: white !important;
+      }
+    </style>
+  </head>
+  <body class="bg-lightBg text-lightText dark:bg-darkBg dark:text-darkText">
+    <div
+      id="auth-view"
+      class="min-h-screen flex flex-col bg-lightBg dark:bg-darkBg"
+    >
+      <header id="auth-header" class="bg-lightCard dark:bg-darkCard shadow-md">
+        <div
+          class="container mx-auto px-4 py-3 flex items-center justify-between"
+        >
+          <div
+            id="auth-header-logo"
+            class="flex items-center text-primary dark:text-primary-light"
+          >
+            <svg
+              class="h-8 w-8 mr-2 rtl:ml-2 rtl:mr-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M10 20.5 3.5 14l6.5-6.5M14 3.5 20.5 10l-6.5 6.5" />
+            </svg>
+            <span class="text-xl sm:text-2xl font-bold">TASK PLANNER</span>
+          </div>
+          <div class="flex items-center">
+            <button
+              id="language-toggle-button-auth"
+              class="text-sm font-medium text-primary dark:text-primary-light hover:underline"
+            ></button>
+            <button
+              id="theme-toggle-button-auth"
+              class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            ></button>
+          </div>
+        </div>
+      </header>
+
+      <div class="flex-grow flex flex-col items-center justify-center p-4">
+        <div
+          class="w-full max-w-md bg-lightCard dark:bg-darkCard p-8 rounded-xl shadow-2xl"
+        >
+          <div
+            id="auth-form-logo"
+            class="flex items-center justify-center text-primary dark:text-primary-light mb-8"
+          >
+            <svg
+              class="h-10 w-10 mr-3 rtl:ml-3 rtl:mr-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M10 20.5 3.5 14l6.5-6.5M14 3.5 20.5 10l-6.5 6.5" />
+            </svg>
+            <span class="text-2xl sm:text-3xl font-bold">TASK PLANNER</span>
+          </div>
+
+          <form id="signin-form" class="space-y-6">
+            <h2 id="signin-title" class="text-xl font-semibold text-center">
+              Sign in to get started
+            </h2>
+            <div>
+              <label
+                for="signin-email"
+                id="signin-email-label"
+                class="block text-sm font-medium"
+                >Email</label
+              >
+              <input
+                type="email"
+                id="signin-email"
+                required
+                class="mt-1 block w-full px-3 py-2 border border-lightBorder dark:border-darkBorder rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white sm:text-sm"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <label
+                for="signin-password"
+                id="signin-password-label"
+                class="block text-sm font-medium"
+                >Password</label
+              >
+              <div class="relative mt-1">
+                <input
+                  type="password"
+                  id="signin-password"
+                  required
+                  class="block w-full px-3 py-2 border border-lightBorder dark:border-darkBorder rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white sm:text-sm pr-10"
+                  placeholder="••••••••"
+                />
+                <span
+                  id="toggle-signin-password"
+                  class="password-toggle-icon text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                >
+                </span>
+              </div>
+            </div>
+            <button
+              type="submit"
+              id="signin-button"
+              class="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150"
+            >
+              Sign In
+            </button>
+            <p id="signin-error" class="text-sm text-red-500 text-center"></p>
+          </form>
+
+          <form id="signup-form" class="space-y-6 hidden">
+            <h2 id="signup-title" class="text-xl font-semibold text-center">
+              Create an account
+            </h2>
+            <div>
+              <label
+                for="signup-email"
+                id="signup-email-label"
+                class="block text-sm font-medium"
+                >Email</label
+              >
+              <input
+                type="email"
+                id="signup-email"
+                required
+                class="mt-1 block w-full px-3 py-2 border border-lightBorder dark:border-darkBorder rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white sm:text-sm"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <label
+                for="signup-password"
+                id="signup-password-label"
+                class="block text-sm font-medium"
+                >Password (min. 6 characters)</label
+              >
+              <div class="relative mt-1">
+                <input
+                  type="password"
+                  id="signup-password"
+                  required
+                  class="block w-full px-3 py-2 border border-lightBorder dark:border-darkBorder rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white sm:text-sm pr-10"
+                  placeholder="••••••••"
+                />
+                <span
+                  id="toggle-signup-password"
+                  class="password-toggle-icon text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                >
+                </span>
+              </div>
+            </div>
+            <button
+              type="submit"
+              id="signup-button"
+              class="w-full bg-secondary hover:bg-secondary-dark text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150"
+            >
+              Sign Up
+            </button>
+            <p id="signup-error" class="text-sm text-red-500 text-center"></p>
+          </form>
+
+          <div class="text-center mt-4">
+            <button
+              id="toggle-auth-mode"
+              class="text-sm text-primary hover:underline"
+            >
+              Don't have an account? Sign Up
+            </button>
+          </div>
+          <div class="text-center mt-2">
+            <button
+              id="forgot-password-button"
+              class="text-sm text-primary hover:underline"
+            >
+              Forgot Password?
+            </button>
+          </div>
+
+          <div class="my-4 flex items-center">
+            <hr class="flex-grow border-lightBorder dark:border-darkBorder" />
+            <span
+              id="or-separator-text"
+              class="mx-4 text-xs text-gray-500 dark:text-gray-400"
+              >OR</span
+            >
+            <hr class="flex-grow border-lightBorder dark:border-darkBorder" />
+          </div>
+
+          <button
+            id="google-signin-button"
+            class="w-full mb-3 bg-white dark:bg-gray-700 border border-red-500 dark:border-red-400 text-red-500 dark:text-red-300 hover:bg-red-50 dark:hover:bg-gray-600 font-medium py-2 px-4 rounded-md shadow-sm transition duration-150 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 mr-2 rtl:ml-2 rtl:mr-0"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                fill="#EA4335"
+              />
+              <path d="M1 1h22v22H1z" fill="none" />
+            </svg>
+            <span id="google-signin-text">Sign in with Google</span>
+          </button>
+          <button
+            id="anonymous-signin-button"
+            class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-150"
+          >
+            Continue anonymously
+          </button>
+        </div>
+        <footer
+          class="w-full max-w-md mt-8 pt-4 border-t border-lightBorder dark:border-darkBorder text-center text-sm text-gray-500 dark:text-gray-400"
+        >
+          <p>
+            © <span id="auth-current-year"></span>
+            <span id="footer-app-name">Task Planner</span>.
+            <span id="footer-rights-reserved">All rights reserved.</span>
+          </p>
+        </footer>
+      </div>
+    </div>
+
+    <div id="app-view" class="hidden">
+      <header class="bg-lightCard dark:bg-darkCard shadow-md sticky top-0 z-50">
+        <div
+          class="container mx-auto px-4 py-3 flex items-center justify-between"
+        >
+          <div
+            id="app-header-logo"
+            class="flex items-center text-primary dark:text-primary-light hidden sm:flex"
+          >
+            <svg
+              class="h-8 w-8 mr-2 rtl:ml-2 rtl:mr-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M10 20.5 3.5 14l6.5-6.5M14 3.5 20.5 10l-6.5 6.5" />
+            </svg>
+            <span class="text-xl font-bold">TASK PLANNER</span>
+          </div>
+          <div class="flex-grow sm:flex-grow-0 flex justify-end">
+            <div class="flex items-center">
+              <button
+                id="language-toggle-button-app"
+                class="text-sm font-medium text-primary dark:text-primary-light hover:underline"
+              ></button>
+              <div
+                id="user-info-container"
+                class="text-xs sm:text-sm mx-2 sm:mx-4 hidden sm:block"
+              >
+                <span
+                  id="user-email-display"
+                  class="block text-right text-lightText dark:text-darkText truncate max-w-[100px] sm:max-w-[150px] md:max-w-xs"
+                ></span>
+                <span
+                  id="user-id-display"
+                  class="block text-right text-gray-500 dark:text-gray-400 text-[10px] sm:text-xs truncate max-w-[100px] sm:max-w-[150px] md:max-w-xs"
+                ></span>
+              </div>
+              <button
+                id="theme-toggle-button-app"
+                class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              ></button>
+              <button
+                id="sign-out-button"
+                class="bg-danger hover:bg-danger-dark text-white text-xs sm:text-sm font-medium py-2 px-2 sm:px-3 rounded-md shadow transition duration-150 ml-2 sm:ml-3"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main
+        class="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4"
+      >
+        <section
+          id="daily-tasks-section"
+          class="bg-lightCard dark:bg-darkCard p-4 sm:p-6 rounded-xl shadow-lg flex flex-col"
+        >
+          <div
+            class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2"
+          >
+            <h2
+              id="daily-tasks-title"
+              class="text-xl sm:text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 dark:from-blue-400 dark:to-cyan-300 transition-all duration-300"
+            >
+              Daily Tasks
+            </h2>
+            <input
+              type="text"
+              id="daily-date-picker"
+              class="p-2 border border-lightBorder dark:border-darkBorder rounded-md dark:bg-gray-700 dark:text-white focus:ring-primary focus:border-primary transition-all duration-300"
+              placeholder="Select Date..."
+            />
+          </div>
+          <div class="flex mb-4 gap-2">
+            <input
+              type="text"
+              id="new-daily-task-input"
+              placeholder="Add new daily task"
+              class="flex-grow p-2 border border-lightBorder dark:border-darkBorder rounded-md dark:bg-gray-700 dark:text-white focus:ring-primary focus:border-primary"
+            />
+            <button
+              id="add-daily-task-button"
+              class="bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-4 rounded-md shadow transition duration-150"
+            >
+              Add
+            </button>
+          </div>
+          <div class="mb-3">
+            <div class="flex justify-between text-sm mb-1">
+              <span
+                id="daily-progress-label"
+                class="font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 dark:from-blue-400 dark:to-cyan-300 transition-all duration-300"
+                >Progress</span
+              >
+              <span id="daily-progress-text">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+              <div
+                id="daily-progress-bar"
+                class="bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-400 h-2.5 rounded-full progress-bar-inner"
+                style="width: 0%"
+              ></div>
+            </div>
+            <p
+              id="daily-completion-summary"
+              class="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center"
+            >
+              0 of 0 completed
+            </p>
+          </div>
+          <ul
+            id="daily-task-list"
+            class="task-list space-y-2 overflow-y-auto flex-grow max-h-[200px] sm:max-h-[250px] pr-1"
+          ></ul>
+
+          <div
+            id="weekly-summary-section"
+            class="mt-6 pt-4 border-t border-lightBorder dark:border-darkBorder"
+          >
+            <h3
+              id="weekly-summary-title"
+              class="text-md font-semibold mb-3 text-center"
+            >
+              ملخص الأسبوع (Weekly Overview)
+            </h3>
+            <div
+              id="weekly-summary-days"
+              class="flex justify-around items-center"
+            ></div>
+          </div>
+
+          <div
+            class="mt-6 pt-4 border-t border-lightBorder dark:border-darkBorder space-y-2"
+          >
+            <h3
+              id="daily-bulk-actions-title"
+              class="text-md font-semibold mb-2"
+            >
+              Bulk Actions (Daily)
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                id="apply-next-30-add"
+                class="w-full text-sm bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-3 rounded-md shadow transition duration-150"
+              >
+                Apply to Next 30 (Add)
+              </button>
+              <button
+                id="apply-next-30-replace"
+                class="w-full text-sm bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-3 rounded-md shadow transition duration-150"
+              >
+                Apply to Next 30 (Replace)
+              </button>
+            </div>
+            <button
+              id="remove-next-30"
+              class="w-full text-sm bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 rounded-md shadow transition duration-150 mt-2"
+            >
+              Remove For Next 30 Days
+            </button>
+          </div>
+        </section>
+
+        <section
+          id="monthly-goals-section"
+          class="bg-lightCard dark:bg-darkCard p-4 sm:p-6 rounded-xl shadow-lg flex flex-col"
+        >
+          <div
+            class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2"
+          >
+            <h2
+              id="monthly-goals-title"
+              class="text-xl sm:text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-400 dark:from-green-400 dark:to-emerald-300"
+            >
+              Monthly Goals
+            </h2>
+            <input
+              type="month"
+              id="monthly-goal-picker"
+              class="p-2 border border-lightBorder dark:border-darkBorder rounded-md dark:bg-gray-700 dark:text-white focus:ring-primary focus:border-primary"
+            />
+          </div>
+          <div class="flex mb-4 gap-2">
+            <input
+              type="text"
+              id="new-monthly-goal-input"
+              placeholder="Add new monthly goal"
+              class="flex-grow p-2 border border-lightBorder dark:border-darkBorder rounded-md dark:bg-gray-700 dark:text-white focus:ring-primary focus:border-primary"
+            />
+            <button
+              id="add-monthly-goal-button"
+              class="bg-secondary hover:bg-secondary-dark text-white font-semibold py-2 px-4 rounded-md shadow transition duration-150"
+            >
+              Add
+            </button>
+          </div>
+          <div class="mb-3">
+            <div class="flex justify-between text-sm mb-1">
+              <span
+                id="monthly-progress-label"
+                class="font-medium text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-400 dark:from-green-400 dark:to-emerald-300"
+                >Progress</span
+              >
+              <span id="monthly-progress-text">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+              <div
+                id="monthly-progress-bar"
+                class="bg-gradient-to-r from-green-500 via-green-400 to-lime-400 h-2.5 rounded-full progress-bar-inner"
+                style="width: 0%"
+              ></div>
+            </div>
+            <p
+              id="monthly-completion-summary"
+              class="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center"
+            >
+              0 of 0 completed
+            </p>
+          </div>
+          <ul
+            id="monthly-goal-list"
+            class="task-list space-y-2 overflow-y-auto flex-grow max-h-[300px] sm:max-h-[400px] pr-1"
+          ></ul>
+          <div
+            class="mt-6 pt-4 border-t border-lightBorder dark:border-darkBorder space-y-2"
+          >
+            <button
+              id="remove-current-month-goals"
+              class="w-full text-sm bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 rounded-md shadow transition duration-150"
+            >
+              Remove All Goals (This Month)
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <footer
+        class="text-center py-8 mt-8 border-t border-lightBorder dark:border-darkBorder"
+      >
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          © <span id="app-current-year"></span>
+          <span id="footer-app-name-main">Task Planner</span>.
+          <span id="footer-rights-reserved-main">All rights reserved.</span>
+        </p>
+      </footer>
+    </div>
+
+    <div id="custom-modal" class="modal">
+      <div
+        class="modal-content bg-lightCard dark:bg-darkCard shadow-xl rounded-lg p-6"
+      >
+        <h3 id="modal-title" class="text-lg font-semibold mb-4">Modal Title</h3>
+        <p id="modal-message" class="text-sm mb-6">Modal message goes here.</p>
+        <div id="modal-actions" class="flex justify-between space-x-3">
+          <button
+            id="modal-cancel-button"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-md shadow"
+          >
+            Cancel
+          </button>
+          <button
+            id="modal-confirm-button"
+            class="bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-4 rounded-md shadow"
+          >
+            Confirm
+          </button>
+          <button
+            id="modal-ok-button"
+            class="bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-4 rounded-md shadow hidden"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Flatpickr Arabic Locale -->
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ar.js"></script>
+    <script type="module">
+      // Firebase App (the core Firebase SDK) is always required and must be listed first
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      // Add SDKs for Firebase products that you want to use
+      import {
+        getAuth,
+        onAuthStateChanged,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        signInAnonymously,
+        sendPasswordResetEmail,
+        signInWithCustomToken, // Added for Canvas
+        GoogleAuthProvider, // Added for Google Sign-In
+        signInWithPopup, // Added for Google Sign-In
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc,
+        updateDoc,
+        deleteDoc,
+        collection,
+        query,
+        where,
+        getDocs,
+        onSnapshot,
+        writeBatch,
+        Timestamp,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+      // Your web app's Firebase configuration
+      const firebaseConfig =
+        typeof __firebase_config !== "undefined"
+          ? JSON.parse(__firebase_config)
+          : {
+              apiKey: "AIzaSyA6ODjEfb1gzIP2FQV8PXr8HM0YLmp-M9U",
+              authDomain: "task-planner-cf25a.firebaseapp.com",
+              projectId: "task-planner-cf25a",
+              storageBucket: "task-planner-cf25a.appspot.com",
+              messagingSenderId: "530070232171",
+              appId: "1:530070232171:web:9b0536fb2d69d09adf652e",
+            };
+
+      console.log("Using Firebase Config:", firebaseConfig);
+      if (
+        firebaseConfig.apiKey === "YOUR_API_KEY" &&
+        typeof __firebase_config === "undefined"
+      ) {
+        console.warn(
+          "WARNING: Using placeholder Firebase configuration. Please replace with your actual project config if running locally."
+        );
+      }
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const appId =
+        typeof __app_id !== "undefined" ? __app_id : "default-task-planner-app";
+      let userId = null;
+      let unsubscribeDailyTasks = () => {};
+      let unsubscribeMonthlyGoals = () => {};
+      let unsubscribeUserPrefs = () => {};
+      let currentDisplayedWeekStartDate = null;
+      let currentLanguage = "en"; // Default language
+      let dailyCalendar = null; // To hold the flatpickr instance
+      let monthCompletionData = {}; // To cache completion data for the visible month
+
+      // DOM Elements
+      const authView = document.getElementById("auth-view");
+      const appView = document.getElementById("app-view");
+      const signinForm = document.getElementById("signin-form");
+      const signupForm = document.getElementById("signup-form");
+      const toggleAuthModeButton = document.getElementById("toggle-auth-mode");
+      const googleSigninButton = document.getElementById(
+        "google-signin-button"
+      );
+      const anonymousSigninButton = document.getElementById(
+        "anonymous-signin-button"
+      );
+      const forgotPasswordButton = document.getElementById(
+        "forgot-password-button"
+      );
+      const signinError = document.getElementById("signin-error");
+      const signupError = document.getElementById("signup-error");
+
+      const userEmailDisplay = document.getElementById("user-email-display");
+      const userIdDisplay = document.getElementById("user-id-display");
+      const userInfoContainer = document.getElementById("user-info-container");
+      const appHeaderLogo = document.getElementById("app-header-logo");
+      const themeToggleButtonApp = document.getElementById(
+        "theme-toggle-button-app"
+      );
+      const themeToggleButtonAuth = document.getElementById(
+        "theme-toggle-button-auth"
+      );
+      const languageToggleButtonApp = document.getElementById(
+        "language-toggle-button-app"
+      );
+      const languageToggleButtonAuth = document.getElementById(
+        "language-toggle-button-auth"
+      );
+      const signOutButton = document.getElementById("sign-out-button");
+
+      const dailyDatePicker = document.getElementById("daily-date-picker");
+      const dailyTasksTitle = document.getElementById("daily-tasks-title");
+      const dailyProgressLabel = document.getElementById(
+        "daily-progress-label"
+      );
+      const newDailyTaskInput = document.getElementById("new-daily-task-input");
+      const addDailyTaskButton = document.getElementById(
+        "add-daily-task-button"
+      );
+      const dailyProgressBar = document.getElementById("daily-progress-bar");
+      const dailyProgressText = document.getElementById("daily-progress-text");
+      const dailyCompletionSummary = document.getElementById(
+        "daily-completion-summary"
+      );
+      const dailyTaskList = document.getElementById("daily-task-list");
+      const weeklySummaryDaysContainer = document.getElementById(
+        "weekly-summary-days"
+      );
+
+      const monthlyGoalPicker = document.getElementById("monthly-goal-picker");
+      const newMonthlyGoalInput = document.getElementById(
+        "new-monthly-goal-input"
+      );
+      const addMonthlyGoalButton = document.getElementById(
+        "add-monthly-goal-button"
+      );
+      const monthlyProgressBar = document.getElementById(
+        "monthly-progress-bar"
+      );
+      const monthlyProgressText = document.getElementById(
+        "monthly-progress-text"
+      );
+      const monthlyCompletionSummary = document.getElementById(
+        "monthly-completion-summary"
+      );
+      const monthlyGoalList = document.getElementById("monthly-goal-list");
+      const removeCurrentMonthGoalsBtn = document.getElementById(
+        "remove-current-month-goals"
+      );
+
+      const applyNext30AddBtn = document.getElementById("apply-next-30-add");
+      const applyNext30ReplaceBtn = document.getElementById(
+        "apply-next-30-replace"
+      );
+      const removeNext30Btn = document.getElementById("remove-next-30");
+
+      const customModal = document.getElementById("custom-modal");
+      const modalTitle = document.getElementById("modal-title");
+      const modalMessage = document.getElementById("modal-message");
+      const modalConfirmButton = document.getElementById(
+        "modal-confirm-button"
+      );
+      const modalCancelButton = document.getElementById("modal-cancel-button");
+      const modalOkButton = document.getElementById("modal-ok-button");
+      let modalConfirmCallback = null;
+
+      const toggleSigninPassword = document.getElementById(
+        "toggle-signin-password"
+      );
+      const toggleSignupPassword = document.getElementById(
+        "toggle-signup-password"
+      );
+      const signinPasswordInput = document.getElementById("signin-password");
+      const signupPasswordInput = document.getElementById("signup-password");
+
+      const eyeIconSVG = `
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            </svg>`;
+      const eyeSlashIconSVG = `
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+            </svg>`;
+
+      // --- Localization ---
+      const translations = {
+        en: {
+          taskPlanner: "Task Planner",
+          signInToGetStarted: "Sign in to get started",
+          emailLabel: "Email",
+          passwordLabel: "Password",
+          passwordMinChars: "Password (min. 6 characters)",
+          signInButton: "Sign In",
+          dontHaveAccount: "Don't have an account? Sign Up",
+          forgotPassword: "Forgot Password?",
+          orSeparator: "OR",
+          signInWithGoogle: "Sign in with Google",
+          continueAnonymously: "Continue anonymously",
+          createAccountTitle: "Create an account",
+          signUpButton: "Sign Up",
+          alreadyHaveAccount: "Already have an account? Sign In",
+          signOut: "Sign Out",
+          dailyTasks: "Daily Tasks",
+          addNewDailyTaskPlaceholder: "Add new daily task",
+          add: "Add",
+          progress: "Progress",
+          completedSummary: (completed, total) =>
+            `${completed} of ${total} completed`,
+          noTasksForDay: "No tasks for this day.",
+          noGoalsForMonth: "No goals for this month.",
+          weeklyOverview: "Weekly Overview",
+          dailyBulkActions: "Bulk Actions (Daily)",
+          applyNext30Add: "Apply to Next 30 (Add)",
+          applyNext30Replace: "Apply to Next 30 (Replace)",
+          removeNext30: "Remove For Next 30 Days",
+          removeNext30Confirm:
+            "Remove ALL daily tasks for the next 30 days (starting tomorrow)? This action cannot be undone.",
+          monthlyGoals: "Monthly Goals",
+          addNewMonthlyGoalPlaceholder: "Add new monthly goal",
+          removeCurrentMonthGoals: "Remove All Goals (This Month)",
+          removeCurrentMonthGoalsConfirm: (month) =>
+            `Remove ALL goals for ${month}? This action cannot be undone.`,
+          allRightsReserved: "All rights reserved.",
+          modalConfirm: "Confirm",
+          modalCancel: "Cancel",
+          modalOK: "OK",
+          anonymousUser: "Anonymous User",
+          dayNames: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+          langToggle: "العربية",
+          deleteTaskTitle: "Delete Task",
+          deleteGoalTitle: "Delete Goal",
+          deleteConfirmMsg: "Are you sure? This cannot be undone.",
+          applyTasksConfirmTitle: (mode) => `Apply Tasks (${mode})`,
+          applyTasksConfirmMsg: (mode) =>
+            `This will ${mode} tasks for next 30 days. Sure?`,
+          noTasksToApplyError: "No tasks on current day to apply.",
+          tasksAppliedSuccess: (mode) => `Tasks applied (${mode}).`,
+          couldNotApplyTasksError: "Could not apply tasks.",
+          removeNext30DaysTitle: "Remove Next 30 Days Tasks",
+          removeNext30DaysSuccess: "Tasks for next 30 days removed.",
+          couldNotRemoveTasksError: "Could not remove tasks.",
+          noMonthSelectedError: "No month selected.",
+          goalsRemovedSuccess: (month) => `All goals for ${month} removed.`,
+          couldNotRemoveGoalsError: "Could not remove goals.",
+          errorModalTitle: "Error",
+          infoModalTitle: "Info",
+          successModalTitle: "Success",
+          forgotPasswordModalTitle: "Forgot Password",
+          forgotPasswordEnterEmail: "Enter email first.",
+          passwordResetEmailSent: (email) =>
+            `Password reset email sent to ${email}.`,
+        },
+        ar: {
+          taskPlanner: "مخطط المهام",
+          signInToGetStarted: "سجل الدخول للبدء",
+          emailLabel: "البريد الإلكتروني",
+          passwordLabel: "كلمة المرور",
+          passwordMinChars: "كلمة المرور (6 أحرف على الأقل)",
+          signInButton: "تسجيل الدخول",
+          dontHaveAccount: "ليس لديك حساب؟ إنشاء حساب",
+          forgotPassword: "هل نسيت كلمة المرور؟",
+          orSeparator: "أو",
+          signInWithGoogle: "تسجيل الدخول بواسطة جوجل",
+          continueAnonymously: "المتابعة كمستخدم مجهول",
+          createAccountTitle: "إنشاء حساب",
+          signUpButton: "إنشاء حساب",
+          alreadyHaveAccount: "لديك حساب بالفعل؟ تسجيل الدخول",
+          signOut: "تسجيل الخروج",
+          dailyTasks: "المهام اليومية",
+          addNewDailyTaskPlaceholder: "أضف مهمة يومية جديدة",
+          add: "إضافة",
+          progress: "التقدم",
+          completedSummary: (completed, total) =>
+            `${completed} من ${total} مكتملة`,
+          noTasksForDay: "لا توجد مهام لهذا اليوم.",
+          noGoalsForMonth: "لا توجد أهداف لهذا الشهر.",
+          weeklyOverview: "ملخص الأسبوع",
+          dailyBulkActions: "إجراءات جماعية (يومية)",
+          applyNext30Add: "تطبيق على 30 يوم تالية (إضافة)",
+          applyNext30Replace: "تطبيق على 30 يوم تالية (استبدال)",
+          removeNext30: "إزالة لـ 30 يوم تالية",
+          removeNext30Confirm:
+            "هل أنت متأكد من إزالة جميع المهام اليومية للـ 30 يومًا القادمة (بدءًا من الغد)؟ لا يمكن التراجع عن هذا الإجراء.",
+          monthlyGoals: "الأهداف الشهرية",
+          addNewMonthlyGoalPlaceholder: "أضف هدفًا شهريًا جديدًا",
+          removeCurrentMonthGoals: "إزالة جميع أهداف هذا الشهر",
+          removeCurrentMonthGoalsConfirm: (month) =>
+            `هل أنت متأكد من إزالة جميع الأهداف للشهر ${month}؟ لا يمكن التراجع عن هذا الإجراء.`,
+          allRightsReserved: "جميع الحقوق محفوظة.",
+          modalConfirm: "تأكيد",
+          modalCancel: "إلغاء",
+          modalOK: "موافق",
+          anonymousUser: "مستخدم مجهول",
+          dayNames: ["احد", "اث", "ثلا", "ار", "خم", "جم", "سب"],
+          langToggle: "English",
+          deleteTaskTitle: "حذف مهمة",
+          deleteGoalTitle: "حذف هدف",
+          deleteConfirmMsg: "هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء.",
+          applyTasksConfirmTitle: (mode) =>
+            `تطبيق المهام (${mode === "add" ? "إضافة" : "استبدال"})`,
+          applyTasksConfirmMsg: (mode) =>
+            `سيؤدي هذا إلى ${
+              mode === "add"
+                ? "إضافة المهام الحالية إلى"
+                : "استبدال جميع المهام في"
+            } الـ 30 يومًا القادمة. هل أنت متأكد؟`,
+          noTasksToApplyError: "لا توجد مهام في اليوم الحالي لتطبيقها.",
+          tasksAppliedSuccess: (mode) =>
+            `تم تطبيق المهام بنجاح (${mode === "add" ? "إضافة" : "استبدال"}).`,
+          couldNotApplyTasksError: "لم يتم تطبيق المهام.",
+          removeNext30DaysTitle: "إزالة مهام الـ 30 يومًا القادمة",
+          removeNext30DaysSuccess: "تمت إزالة مهام الـ 30 يومًا القادمة.",
+          couldNotRemoveTasksError: "لم يتم حذف المهام.",
+          noMonthSelectedError: "لم يتم تحديد أي شهر.",
+          goalsRemovedSuccess: (month) => `تمت إزالة جميع أهداف شهر ${month}.`,
+          couldNotRemoveGoalsError: "لم يتم حذف الأهداف.",
+          errorModalTitle: "خطأ",
+          infoModalTitle: "معلومة",
+          successModalTitle: "نجاح",
+          forgotPasswordModalTitle: "نسيت كلمة المرور",
+          forgotPasswordEnterEmail: "أدخل بريدك الإلكتروني أولاً.",
+          passwordResetEmailSent: (email) =>
+            `تم إرسال بريد إعادة تعيين كلمة المرور إلى ${email}.`,
+        },
+      };
+
+      function applyLanguage(lang) {
+        currentLanguage = lang;
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+        document.body.classList.toggle("lang-ar", lang === "ar");
+
+        const t = translations[lang];
+
+        const setText = (id, textKey, dynamicValues = null) => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.textContent = dynamicValues
+              ? t[textKey](...dynamicValues)
+              : t[textKey];
+          }
+        };
+        const setPlaceholder = (id, placeholderKey) => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.placeholder = t[placeholderKey];
+          }
+        };
+
+        // Auth View
+        //setText('auth-header-title', 'taskPlanner');
+        //setText('auth-form-title', 'taskPlanner');
+        setText("signin-title", "signInToGetStarted");
+        setText("signin-email-label", "emailLabel");
+        setText("signin-password-label", "passwordLabel");
+        setText("signin-button", "signInButton");
+        setText(
+          "toggle-auth-mode",
+          signinForm.classList.contains("hidden")
+            ? "alreadyHaveAccount"
+            : "dontHaveAccount"
+        );
+        setText("forgot-password-button", "forgotPassword");
+        setText("or-separator-text", "orSeparator");
+        setText("google-signin-text", "signInWithGoogle");
+        if (anonymousSigninButton)
+          anonymousSigninButton.textContent = t.continueAnonymously;
+
+        setText("signup-title", "createAccountTitle");
+        setText("signup-email-label", "emailLabel");
+        setText("signup-password-label", "passwordMinChars");
+        setText("signup-button", "signUpButton");
+
+        setText("footer-app-name", "taskPlanner");
+        setText("footer-rights-reserved", "allRightsReserved");
+
+        // App View Header
+        //setText('app-header-title', 'taskPlanner');
+        if (signOutButton) signOutButton.textContent = t.signOut;
+        if (languageToggleButtonApp)
+          languageToggleButtonApp.textContent = t.langToggle;
+        if (languageToggleButtonAuth)
+          languageToggleButtonAuth.textContent = t.langToggle;
+
+        // Daily Tasks Section
+        setText("daily-tasks-title", "dailyTasks");
+        setPlaceholder("new-daily-task-input", "addNewDailyTaskPlaceholder");
+        if (addDailyTaskButton) addDailyTaskButton.textContent = t.add;
+        setText("daily-progress-label", "progress");
+        setText("weekly-summary-title", "weeklyOverview");
+        setText("daily-bulk-actions-title", "dailyBulkActions");
+        if (applyNext30AddBtn) applyNext30AddBtn.textContent = t.applyNext30Add;
+        if (applyNext30ReplaceBtn)
+          applyNext30ReplaceBtn.textContent = t.applyNext30Replace;
+        if (removeNext30Btn) removeNext30Btn.textContent = t.removeNext30;
+
+        // Monthly Goals Section
+        setText("monthly-goals-title", "monthlyGoals");
+        setPlaceholder(
+          "new-monthly-goal-input",
+          "addNewMonthlyGoalPlaceholder"
+        );
+        if (addMonthlyGoalButton) addMonthlyGoalButton.textContent = t.add;
+        setText("monthly-progress-label", "progress");
+        if (removeCurrentMonthGoalsBtn)
+          removeCurrentMonthGoalsBtn.textContent = t.removeCurrentMonthGoals;
+
+        // Footer Main App
+        setText("footer-app-name-main", "taskPlanner");
+        setText("footer-rights-reserved-main", "allRightsReserved");
+
+        // Update dynamic texts like completion summaries and re-render task lists for empty messages
+        if (userId && appView && !appView.classList.contains("hidden")) {
+          const currentDailyTasks = Array.from(
+            dailyTaskList.querySelectorAll("li.task-item")
+          ).map((li) => ({
+            completed: li.querySelector('input[type="checkbox"]').checked,
+          }));
+          updateProgress("daily", currentDailyTasks);
+          const currentMonthlyGoals = Array.from(
+            monthlyGoalList.querySelectorAll("li.task-item")
+          ).map((li) => ({
+            completed: li.querySelector('input[type="checkbox"]').checked,
+          }));
+          updateProgress("monthly", currentMonthlyGoals);
+
+          if (dailyTaskList.querySelectorAll("li.task-item").length === 0) {
+            renderTasks([], "daily");
+          }
+          if (monthlyGoalList.querySelectorAll("li.task-item").length === 0) {
+            renderTasks([], "monthly");
+          }
+        } else if (authView && !authView.classList.contains("hidden")) {
+          if (dailyTaskList)
+            dailyTaskList.innerHTML = `<li class="text-center text-gray-500 dark:text-gray-400 py-4">${t.noTasksForDay}</li>`;
+          if (monthlyGoalList)
+            monthlyGoalList.innerHTML = `<li class="text-center text-gray-500 dark:text-gray-400 py-4">${t.noGoalsForMonth}</li>`;
+        }
+
+        // Re-initialize flatpickr with the new locale
+        if (userId && !appView.classList.contains("hidden")) {
+          initializePickers();
+        }
+      }
+
+      async function saveLanguagePreference(lang) {
+        if (userId && auth.currentUser && !auth.currentUser.isAnonymous) {
+          try {
+            await setDoc(
+              doc(db, `artifacts/${appId}/users/${userId}/preferences/doc`),
+              { language: lang },
+              { merge: true }
+            );
+          } catch (error) {
+            console.error("Error saving language preference:", error);
+          }
+        } else {
+          localStorage.setItem("taskPlannerLanguage", lang);
+        }
+      }
+
+      async function loadInitialPreferences() {
+        let preferredTheme =
+          localStorage.getItem("taskPlannerTheme") || "light";
+        let preferredLang = localStorage.getItem("taskPlannerLanguage") || "en";
+
+        if (userId && auth.currentUser && !auth.currentUser.isAnonymous) {
+          try {
+            const userPrefsRef = doc(
+              db,
+              `artifacts/${appId}/users/${userId}/preferences/doc`
+            );
+            const docSnap = await getDoc(userPrefsRef);
+            if (docSnap.exists()) {
+              if (docSnap.data().theme) preferredTheme = docSnap.data().theme;
+              if (docSnap.data().language)
+                preferredLang = docSnap.data().language;
+            }
+          } catch (error) {
+            console.error("Error loading user preferences:", error);
+          }
+        }
+        applyTheme(preferredTheme);
+        applyLanguage(preferredLang);
+      }
+
+      function setupLanguageToggle(button) {
+        if (button) {
+          button.addEventListener("click", () => {
+            const newLang = currentLanguage === "en" ? "ar" : "en";
+            applyLanguage(newLang);
+            saveLanguagePreference(newLang);
+          });
+        }
+      }
+      setupLanguageToggle(languageToggleButtonApp);
+      setupLanguageToggle(languageToggleButtonAuth);
+
+      function showModal(
+        titleKey,
+        messageKey,
+        type = "alert",
+        confirmCallback = null,
+        messageParams = null
+      ) {
+        const t = translations[currentLanguage];
+
+        const finalTitle = t[titleKey] || titleKey;
+        let finalMessage;
+        if (typeof t[messageKey] === "function") {
+          finalMessage = messageParams
+            ? t[messageKey](...messageParams)
+            : t[messageKey]();
+        } else {
+          finalMessage = t[messageKey] || messageKey;
+        }
+
+        modalTitle.textContent = finalTitle;
+        modalMessage.innerHTML = finalMessage;
+        modalConfirmCallback = confirmCallback;
+
+        if (modalConfirmButton) modalConfirmButton.textContent = t.modalConfirm;
+        if (modalCancelButton) modalCancelButton.textContent = t.modalCancel;
+        if (modalOkButton) modalOkButton.textContent = t.modalOK;
+
+        modalConfirmButton.classList.toggle("hidden", type !== "confirm");
+        modalCancelButton.classList.toggle("hidden", type !== "confirm");
+        modalOkButton.classList.toggle("hidden", type === "confirm");
+
+        const actionsContainer = document.getElementById("modal-actions");
+        if (type === "confirm") {
+          actionsContainer.classList.remove("justify-end");
+          actionsContainer.classList.add("justify-between");
+        } else {
+          actionsContainer.classList.remove("justify-between");
+          actionsContainer.classList.add("justify-end");
+        }
+
+        customModal.style.display = "flex";
+      }
+      function hideModal() {
+        customModal.style.display = "none";
+        modalConfirmCallback = null;
+      }
+      modalConfirmButton.addEventListener("click", () => {
+        if (modalConfirmCallback) modalConfirmCallback();
+        hideModal();
+      });
+      modalCancelButton.addEventListener("click", hideModal);
+      modalOkButton.addEventListener("click", hideModal);
+
+      // Updated sunIcon
+      const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-[1.2rem] w-[1.2rem]"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`;
+      const moonIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" /></svg>`;
+
+      function applyTheme(theme) {
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        const icon = theme === "dark" ? sunIcon : moonIcon;
+        if (themeToggleButtonApp) themeToggleButtonApp.innerHTML = icon;
+        if (themeToggleButtonAuth) themeToggleButtonAuth.innerHTML = icon;
+      }
+      async function saveThemePreference(theme) {
+        if (userId && auth.currentUser && !auth.currentUser.isAnonymous) {
+          try {
+            await setDoc(
+              doc(db, `artifacts/${appId}/users/${userId}/preferences/doc`),
+              { theme: theme },
+              { merge: true }
+            );
+          } catch (error) {
+            console.error("Error saving theme preference:", error);
+          }
+        } else {
+          localStorage.setItem("taskPlannerTheme", theme);
+        }
+      }
+
+      function setupThemeToggleListener(button) {
+        if (button) {
+          button.addEventListener("click", () => {
+            const newTheme = document.documentElement.classList.contains("dark")
+              ? "light"
+              : "dark";
+            applyTheme(newTheme);
+            saveThemePreference(newTheme);
+          });
+        }
+      }
+      setupThemeToggleListener(themeToggleButtonApp);
+      setupThemeToggleListener(themeToggleButtonAuth);
+
+      function setupPasswordToggle(toggleElement, passwordInputElement) {
+        if (toggleElement && passwordInputElement) {
+          toggleElement.innerHTML = eyeSlashIconSVG;
+          toggleElement.addEventListener("click", () => {
+            const isPassword = passwordInputElement.type === "password";
+            passwordInputElement.type = isPassword ? "text" : "password";
+            toggleElement.innerHTML = isPassword ? eyeIconSVG : eyeSlashIconSVG;
+          });
+        }
+      }
+      setupPasswordToggle(toggleSigninPassword, signinPasswordInput);
+      setupPasswordToggle(toggleSignupPassword, signupPasswordInput);
+
+      onAuthStateChanged(auth, async (user) => {
+        unsubscribeDailyTasks();
+        unsubscribeMonthlyGoals();
+        unsubscribeUserPrefs();
+        if (user) {
+          userId = user.uid;
+          authView.classList.add("hidden");
+          appView.classList.remove("hidden");
+
+          await loadInitialPreferences();
+
+          userEmailDisplay.textContent = user.isAnonymous
+            ? translations[currentLanguage].anonymousUser
+            : user.email;
+          userIdDisplay.textContent = `ID: ${user.uid.substring(0, 8)}...`;
+
+          initializePickers();
+          loadDailyTasks();
+          loadMonthlyGoals();
+
+          if (!user.isAnonymous) {
+            unsubscribeUserPrefs = onSnapshot(
+              doc(db, `artifacts/${appId}/users/${userId}/preferences/doc`),
+              (docSnap) => {
+                if (docSnap.exists()) {
+                  const data = docSnap.data();
+                  if (
+                    data.theme &&
+                    data.theme !==
+                      (document.documentElement.classList.contains("dark")
+                        ? "dark"
+                        : "light")
+                  ) {
+                    applyTheme(data.theme);
+                  }
+                  if (data.language && data.language !== currentLanguage) {
+                    applyLanguage(data.language);
+                  }
+                }
+              }
+            );
+          }
+        } else {
+          userId = null;
+          currentDisplayedWeekStartDate = null;
+          authView.classList.remove("hidden");
+          appView.classList.add("hidden");
+          userEmailDisplay.textContent = "";
+          userIdDisplay.textContent = "";
+          if (signinForm) signinForm.reset();
+          if (signupForm) signupForm.reset();
+          if (signinPasswordInput) signinPasswordInput.type = "password";
+          if (signupPasswordInput) signupPasswordInput.type = "password";
+          if (toggleSigninPassword)
+            toggleSigninPassword.innerHTML = eyeSlashIconSVG;
+          if (toggleSignupPassword)
+            toggleSignupPassword.innerHTML = eyeSlashIconSVG;
+          if (signinError) signinError.textContent = "";
+          if (signupError) signupError.textContent = "";
+
+          dailyTaskList.innerHTML = "";
+          monthlyGoalList.innerHTML = "";
+          if (weeklySummaryDaysContainer)
+            weeklySummaryDaysContainer.innerHTML = "";
+          updateProgress("daily", [], 0);
+          updateProgress("monthly", [], 0);
+          loadInitialPreferences();
+        }
+      });
+
+      signinForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        signinError.textContent = "";
+        const email = signinForm["signin-email"].value;
+        const password = signinPasswordInput.value;
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+          console.error("Sign in error:", error);
+          if (error.code === "auth/operation-not-allowed")
+            signinError.textContent =
+              "Email/Password sign-in is not enabled. Check Firebase settings.";
+          else if (
+            error.code === "auth/invalid-credential" ||
+            error.code === "auth/user-not-found" ||
+            error.code === "auth/wrong-password"
+          )
+            signinError.textContent = "Invalid email or password.";
+          else signinError.textContent = error.message;
+        }
+      });
+
+      signupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        signupError.textContent = "";
+        const email = signupForm["signup-email"].value;
+        const password = signupPasswordInput.value;
+        if (password.length < 6) {
+          signupError.textContent = "Password min 6 characters.";
+          return;
+        }
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+          console.error("Sign up error:", error);
+          if (error.code === "auth/operation-not-allowed")
+            signupError.textContent =
+              "Email/Password sign-up is not enabled. Check Firebase settings.";
+          else signupError.textContent = error.message;
+        }
+      });
+
+      googleSigninButton.addEventListener("click", async () => {
+        const provider = new GoogleAuthProvider();
+        try {
+          await signInWithPopup(auth, provider);
+        } catch (error) {
+          console.error("Google sign-in error: ", error);
+          if (error.code === "auth/popup-closed-by-user") {
+            showModal(
+              "Google Sign-In",
+              "Sign-in popup closed before completion.",
+              "alert"
+            );
+          } else if (error.code === "auth/operation-not-allowed") {
+            showModal(
+              "Google Sign-In",
+              "Google Sign-In is not enabled. Please check your Firebase project settings.",
+              "alert"
+            );
+          } else if (error.code === "auth/unauthorized-domain") {
+            showModal(
+              "Google Sign-In Error",
+              "This domain is not authorized for Google Sign-In. Please add it to the authorized domains list in your Firebase project's Authentication settings. Your current domain is: " +
+                window.location.hostname,
+              "alert"
+            );
+          } else {
+            showModal("errorModalTitle", error.message, "alert");
+          }
+        }
+      });
+
+      toggleAuthModeButton.addEventListener("click", () => {
+        signinForm.classList.toggle("hidden");
+        signupForm.classList.toggle("hidden");
+        applyLanguage(currentLanguage);
+        signinError.textContent = "";
+        signupError.textContent = "";
+      });
+
+      forgotPasswordButton.addEventListener("click", async () => {
+        const email =
+          signinForm["signin-email"].value || signupForm["signup-email"].value;
+        if (!email) {
+          showModal(
+            "forgotPasswordModalTitle",
+            "forgotPasswordEnterEmail",
+            "alert"
+          );
+          return;
+        }
+        try {
+          await sendPasswordResetEmail(auth, email);
+          showModal("Password Reset", "passwordResetEmailSent", "alert", null, [
+            email,
+          ]);
+        } catch (error) {
+          console.error("Forgot password error:", error);
+          showModal("errorModalTitle", error.message, "alert");
+        }
+      });
+
+      anonymousSigninButton.addEventListener("click", async () => {
+        try {
+          await signInAnonymously(auth);
+        } catch (error) {
+          console.error("Anonymous sign in error:", error);
+          if (error.code === "auth/operation-not-allowed")
+            showModal(
+              "errorModalTitle",
+              "Anonymous sign-in not enabled. Check Firebase settings.",
+              "alert"
+            );
+          else
+            showModal(
+              "errorModalTitle",
+              "Could not sign in anonymously. " + error.message,
+              "alert"
+            );
+        }
+      });
+
+      signOutButton.addEventListener("click", async () => {
+        try {
+          await signOut(auth);
+        } catch (error) {
+          console.error("Sign out error:", error);
+          showModal(
+            "errorModalTitle",
+            "Could not sign out. " + error.message,
+            "alert"
+          );
+        }
+      });
+
+      function getCurrentDateString() {
+        const t = new Date();
+        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}-${String(t.getDate()).padStart(2, "0")}`;
+      }
+      function getCurrentMonthString() {
+        const t = new Date();
+        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}`;
+      }
+
+      function initializePickers() {
+        monthlyGoalPicker.value = getCurrentMonthString();
+
+        if (dailyCalendar) {
+          dailyCalendar.destroy();
+        }
+
+        const flatpickrOptions = {
+          dateFormat: "Y-m-d",
+          defaultDate: "today",
+          locale: currentLanguage === "ar" ? "ar" : "default",
+          onChange: function (selectedDates, dateStr, instance) {
+            loadDailyTasks();
+          },
+          onMonthChange: async function (selectedDates, dateStr, instance) {
+            const year = instance.currentYear;
+            const month = instance.currentMonth + 1;
+            await fetchMonthCompletionData(year, month);
+            instance.redraw();
+          },
+          onDayCreate: function (dObj, dStr, fp, dayElem) {
+            const dateString = flatpickr.formatDate(dayElem.dateObj, "Y-m-d");
+            const percentage = monthCompletionData[dateString];
+
+            if (percentage === undefined) return;
+
+            if (percentage > 0 && percentage < 50) {
+              dayElem.classList.add("day-red");
+            } else if (percentage >= 50 && percentage < 100) {
+              dayElem.classList.add("day-orange");
+            } else if (percentage === 100) {
+              dayElem.classList.add("day-green");
+            }
+          },
+        };
+
+        dailyCalendar = flatpickr(dailyDatePicker, flatpickrOptions);
+
+        monthlyGoalPicker.addEventListener("change", loadMonthlyGoals);
+      }
+
+      async function fetchMonthCompletionData(year, month) {
+        if (!userId) return;
+        const monthKey = `${year}-${String(month).padStart(2, "0")}`;
+        console.log(`[fetchMonthCompletionData] Fetching data for ${monthKey}`);
+
+        // This is a simplified fetch. For a large number of days, this is inefficient.
+        // A better approach would be a single query if data structure allowed it.
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const promises = [];
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dateString = `${year}-${String(month).padStart(
+            2,
+            "0"
+          )}-${String(day).padStart(2, "0")}`;
+          promises.push(
+            getCompletionPercentageForDate(dateString).then((percentage) => ({
+              dateString,
+              percentage,
+            }))
+          );
+        }
+        const results = await Promise.all(promises);
+        results.forEach(({ dateString, percentage }) => {
+          monthCompletionData[dateString] = percentage;
+        });
+        console.log("[fetchMonthCompletionData] Data cached for", monthKey);
+      }
+
+      function renderTasks(tasks, type) {
+        const listEl = type === "daily" ? dailyTaskList : monthlyGoalList;
+        const t = translations[currentLanguage];
+        listEl.innerHTML = "";
+        if (!tasks || tasks.length === 0) {
+          const li = document.createElement("li");
+          li.textContent =
+            type === "daily" ? t.noTasksForDay : t.noGoalsForMonth;
+          li.className = "text-center text-gray-500 dark:text-gray-400 py-4";
+          listEl.appendChild(li);
+          updateProgress(type, [], 0);
+          return;
+        }
+        tasks.forEach((task) => {
+          const li = document.createElement("li");
+          li.className = `task-item flex items-center justify-between p-3 rounded-lg border border-lightBorder dark:border-darkBorder bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+            task.completed ? "opacity-60" : ""
+          }`;
+          li.dataset.id = task.id;
+          const content = document.createElement("div");
+          content.className = "flex items-center flex-grow mr-2 min-w-0";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = task.completed;
+          cb.className =
+            "form-checkbox h-5 w-5 text-primary rounded focus:ring-primary-dark mr-3 cursor-pointer flex-shrink-0";
+          cb.addEventListener("change", () =>
+            toggleTaskComplete(task.id, type, cb.checked)
+          );
+          const span = document.createElement("span");
+          span.textContent = task.text;
+          span.className = `flex-grow truncate ${
+            task.completed
+              ? "line-through text-gray-500 dark:text-gray-400"
+              : "text-lightText dark:text-darkText"
+          }`;
+          const input = document.createElement("input");
+          input.type = "text";
+          input.value = task.text;
+          input.className =
+            "hidden flex-grow p-1 border border-lightBorder dark:border-darkBorder rounded-md dark:bg-gray-700 dark:text-white focus:ring-primary focus:border-primary";
+          input.addEventListener("blur", () =>
+            saveTaskText(task.id, type, input, span)
+          );
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") input.blur();
+            if (e.key === "Escape") {
+              input.value = task.text;
+              input.classList.add("hidden");
+              span.classList.remove("hidden");
+            }
+          });
+          content.append(cb, span, input);
+          const actions = document.createElement("div");
+          actions.className =
+            "flex items-center space-x-1 sm:space-x-2 flex-shrink-0";
+
+          const editBtn = document.createElement("button");
+          editBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>`;
+          editBtn.className =
+            "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600";
+          editBtn.title = "Edit";
+          editBtn.addEventListener("click", () => {
+            span.classList.add("hidden");
+            input.classList.remove("hidden");
+            input.focus();
+          });
+          const delBtn = document.createElement("button");
+          delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12.56 0c.342.052.682.107 1.022.166m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>`;
+          delBtn.className =
+            "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600";
+          delBtn.title = "Delete";
+          delBtn.addEventListener("click", () => deleteTask(task.id, type));
+          actions.append(editBtn, delBtn);
+          li.append(content, actions);
+          listEl.appendChild(li);
+        });
+      }
+
+      async function saveTaskText(taskId, type, inputEl, spanEl) {
+        const newText = inputEl.value.trim();
+        if (!newText || newText === spanEl.textContent) {
+          inputEl.value = spanEl.textContent;
+          inputEl.classList.add("hidden");
+          spanEl.classList.remove("hidden");
+          return;
+        }
+        const dateOrMonth =
+          type === "daily"
+            ? dailyCalendar.selectedDates[0]
+              ? flatpickr.formatDate(dailyCalendar.selectedDates[0], "Y-m-d")
+              : null
+            : monthlyGoalPicker.value;
+        if (!dateOrMonth) return;
+        const coll =
+          type === "daily" ? "dailyTasksByDate" : "monthlyGoalsByMonth";
+        const field = type === "daily" ? "tasks" : "goals";
+        const docRef = doc(
+          db,
+          `artifacts/${appId}/users/${userId}/${coll}/${dateOrMonth}`
+        );
+        try {
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const items = docSnap.data()[field] || [];
+            const idx = items.findIndex((i) => i.id === taskId);
+            if (idx > -1) {
+              items[idx].text = newText;
+              await updateDoc(docRef, { [field]: items });
+            }
+          }
+          inputEl.classList.add("hidden");
+          spanEl.textContent = newText;
+          spanEl.classList.remove("hidden");
+        } catch (e) {
+          console.error(`Error updating ${type} text:`, e);
+          showModal(
+            "errorModalTitle",
+            `Could not update. ${e.message}`,
+            "alert"
+          );
+          inputEl.value = spanEl.textContent;
+          inputEl.classList.add("hidden");
+          spanEl.classList.remove("hidden");
+        }
+      }
+
+      function updateProgress(type, tasks) {
+        const completed = tasks.filter((t) => t.completed).length;
+        const total = tasks.length;
+        const perc = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const progBar =
+          type === "daily" ? dailyProgressBar : monthlyProgressBar;
+        const progText =
+          type === "daily" ? dailyProgressText : monthlyProgressText;
+        const summary =
+          type === "daily" ? dailyCompletionSummary : monthlyCompletionSummary;
+        progBar.style.width = `${perc}%`;
+        progText.textContent = `${perc}%`;
+
+        const t = translations[currentLanguage];
+        if (summary) summary.textContent = t.completedSummary(completed, total);
+      }
+
+      async function addTask(
+        type,
+        textOverride = null,
+        completedOverride = false
+      ) {
+        const inputEl =
+          type === "daily" ? newDailyTaskInput : newMonthlyGoalInput;
+        const text =
+          textOverride !== null ? textOverride : inputEl.value.trim();
+
+        if (!text || !userId) {
+          return;
+        }
+
+        const dateOrMonth =
+          type === "daily"
+            ? dailyCalendar.selectedDates[0]
+              ? flatpickr.formatDate(dailyCalendar.selectedDates[0], "Y-m-d")
+              : null
+            : monthlyGoalPicker.value;
+
+        if (!dateOrMonth) {
+          showModal(
+            "errorModalTitle",
+            `Please select a ${type === "daily" ? "date" : "month"} first.`,
+            "alert"
+          );
+          return;
+        }
+
+        const coll =
+          type === "daily" ? "dailyTasksByDate" : "monthlyGoalsByMonth";
+        const field = type === "daily" ? "tasks" : "goals";
+        const newTask = {
+          id: crypto.randomUUID(),
+          text,
+          completed: completedOverride,
+          createdAt: Timestamp.now(),
+        };
+
+        const docPath = `artifacts/${appId}/users/${userId}/${coll}/${dateOrMonth}`;
+        const docRef = doc(db, docPath);
+
+        try {
+          const docSnap = await getDoc(docRef);
+          let currentItems = [];
+          if (docSnap.exists() && docSnap.data() && docSnap.data()[field]) {
+            currentItems = docSnap.data()[field];
+            if (!Array.isArray(currentItems)) {
+              currentItems = [];
+            }
+          }
+          const updatedItems = [...currentItems, newTask];
+          await setDoc(docRef, { [field]: updatedItems }, { merge: true });
+          if (textOverride === null) inputEl.value = "";
+        } catch (e) {
+          showModal(
+            "errorModalTitle",
+            `Could not add ${type}. ${e.message}`,
+            "alert"
+          );
+        }
+      }
+      addDailyTaskButton.addEventListener("click", () => addTask("daily"));
+      newDailyTaskInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") addTask("daily");
+      });
+      addMonthlyGoalButton.addEventListener("click", () => addTask("monthly"));
+      newMonthlyGoalInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") addTask("monthly");
+      });
+
+      async function toggleTaskComplete(taskId, type, isCompleted) {
+        if (!userId) return;
+        const dateOrMonth =
+          type === "daily"
+            ? dailyCalendar.selectedDates[0]
+              ? flatpickr.formatDate(dailyCalendar.selectedDates[0], "Y-m-d")
+              : null
+            : monthlyGoalPicker.value;
+        if (!dateOrMonth) return;
+        const coll =
+          type === "daily" ? "dailyTasksByDate" : "monthlyGoalsByMonth";
+        const field = type === "daily" ? "tasks" : "goals";
+        const docRef = doc(
+          db,
+          `artifacts/${appId}/users/${userId}/${coll}/${dateOrMonth}`
+        );
+        try {
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const items = docSnap.data()[field] || [];
+            if (!Array.isArray(items)) {
+              return;
+            }
+            const idx = items.findIndex((i) => i.id === taskId);
+            if (idx > -1) {
+              items[idx].completed = isCompleted;
+              await updateDoc(docRef, { [field]: items });
+            }
+          }
+        } catch (e) {
+          showModal(
+            "errorModalTitle",
+            `Could not update. ${e.message}`,
+            "alert"
+          );
+        }
+      }
+
+      async function deleteTask(taskId, type) {
+        const titleKey =
+          type === "daily" ? "deleteTaskTitle" : "deleteGoalTitle";
+        showModal(titleKey, "deleteConfirmMsg", "confirm", async () => {
+          if (!userId) return;
+          const dateOrMonth =
+            type === "daily"
+              ? dailyCalendar.selectedDates[0]
+                ? flatpickr.formatDate(dailyCalendar.selectedDates[0], "Y-m-d")
+                : null
+              : monthlyGoalPicker.value;
+          if (!dateOrMonth) return;
+          const coll =
+            type === "daily" ? "dailyTasksByDate" : "monthlyGoalsByMonth";
+          const field = type === "daily" ? "tasks" : "goals";
+          const docRef = doc(
+            db,
+            `artifacts/${appId}/users/${userId}/${coll}/${dateOrMonth}`
+          );
+          try {
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              let items = docSnap.data()[field] || [];
+              if (!Array.isArray(items)) {
+                return;
+              }
+              await updateDoc(docRef, {
+                [field]: items.filter((i) => i.id !== taskId),
+              });
+            }
+          } catch (e) {
+            showModal(
+              "errorModalTitle",
+              `Could not delete. ${e.message}`,
+              "alert"
+            );
+          }
+        });
+      }
+
+      function loadData(type) {
+        if (!userId) {
+          return;
+        }
+        const pickerValue =
+          type === "daily"
+            ? dailyCalendar.selectedDates[0]
+              ? flatpickr.formatDate(dailyCalendar.selectedDates[0], "Y-m-d")
+              : getCurrentDateString()
+            : monthlyGoalPicker.value;
+        if (!pickerValue) {
+          return;
+        }
+        const collName =
+          type === "daily" ? "dailyTasksByDate" : "monthlyGoalsByMonth";
+        const fieldName = type === "daily" ? "tasks" : "goals";
+
+        let unsub =
+          type === "daily" ? unsubscribeDailyTasks : unsubscribeMonthlyGoals;
+        unsub();
+
+        const docRef = doc(
+          db,
+          `artifacts/${appId}/users/${userId}/${collName}/${pickerValue}`
+        );
+        const newUnsub = onSnapshot(
+          docRef,
+          (docSnap) => {
+            let items = [];
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              if (data && data[fieldName]) {
+                items = data[fieldName];
+                if (!Array.isArray(items)) {
+                  items = [];
+                }
+              }
+            }
+            renderTasks(
+              Array.isArray(items)
+                ? items.sort((a, b) =>
+                    a.createdAt && b.createdAt
+                      ? a.createdAt.toMillis() - b.createdAt.toMillis()
+                      : 0
+                  )
+                : [],
+              type
+            );
+            updateProgress(type, Array.isArray(items) ? items : []);
+            if (type === "daily") {
+              const currentSelectedDateISO = pickerValue;
+              const weekStartForSelectedDate = getSunday(
+                new Date(currentSelectedDateISO + "T00:00:00Z")
+              )
+                .toISOString()
+                .split("T")[0];
+              displayWeeklySummary(weekStartForSelectedDate);
+              // Refresh calendar colors when daily data changes
+              if (dailyCalendar) {
+                const date = new Date(pickerValue + "T00:00:00Z");
+                fetchMonthCompletionData(
+                  date.getUTCFullYear(),
+                  date.getUTCMonth() + 1
+                ).then(() => {
+                  dailyCalendar.redraw();
+                });
+              }
+            }
+          },
+          (error) => {
+            console.error(
+              `[loadData-${type}] Error listening to ${pickerValue}:`,
+              error
+            );
+            showModal(
+              "errorModalTitle",
+              `Could not load ${type}. ${error.message}`,
+              "alert"
+            );
+            renderTasks([], type);
+            updateProgress(type, [], 0);
+            if (type === "daily") {
+              const currentSelectedDate = new Date(pickerValue + "T00:00:00Z");
+              displayWeeklySummary(
+                getSunday(currentSelectedDate).toISOString().split("T")[0]
+              );
+            }
+          }
+        );
+
+        if (type === "daily") unsubscribeDailyTasks = newUnsub;
+        else unsubscribeMonthlyGoals = newUnsub;
+      }
+      const loadDailyTasks = () => loadData("daily");
+      const loadMonthlyGoals = () => loadData("monthly");
+
+      function getSunday(d) {
+        const date = new Date(d.valueOf());
+        const day = date.getUTCDay();
+        const diff = date.getUTCDate() - day;
+        return new Date(date.setUTCDate(diff));
+      }
+
+      async function getCompletionPercentageForDate(dateString) {
+        if (!userId) return 0;
+        const docRef = doc(
+          db,
+          `artifacts/${appId}/users/${userId}/dailyTasksByDate/${dateString}`
+        );
+        try {
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const tasks = docSnap.data().tasks || [];
+            const totalTasks = tasks.length;
+            if (totalTasks === 0) return 0;
+            const completedTasks = tasks.filter((t) => t.completed).length;
+            return Math.round((completedTasks / totalTasks) * 100);
+          }
+          return -1;
+        } catch (error) {
+          console.error(`Error fetching tasks for ${dateString}:`, error);
+          return -1;
+        }
+      }
+
+      async function displayWeeklySummary(targetWeekStartDateString) {
+        if (!userId || !weeklySummaryDaysContainer) return;
+        const dayNames = translations[currentLanguage].dayNames;
+
+        if (
+          targetWeekStartDateString !== currentDisplayedWeekStartDate ||
+          weeklySummaryDaysContainer.children.length !== 7 ||
+          (weeklySummaryDaysContainer.children.length > 0 &&
+            weeklySummaryDaysContainer.children[0].querySelector("span")
+              .textContent !== dayNames[0])
+        ) {
+          currentDisplayedWeekStartDate = targetWeekStartDateString;
+          weeklySummaryDaysContainer.innerHTML = "";
+          const startDate = new Date(
+            currentDisplayedWeekStartDate + "T00:00:00Z"
+          );
+
+          for (let i = 0; i < 7; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setUTCDate(startDate.getUTCDate() + i);
+            const dateString = currentDate.toISOString().split("T")[0];
+
+            const dayDiv = document.createElement("div");
+            dayDiv.className = "flex flex-col items-center text-center";
+            dayDiv.dataset.date = dateString;
+
+            const dayNameSpan = document.createElement("span");
+            dayNameSpan.textContent = dayNames[i];
+            dayNameSpan.className =
+              "text-xs mb-1 text-gray-600 dark:text-gray-400";
+
+            const dayIndicatorCircle = document.createElement("div");
+            dayIndicatorCircle.className =
+              "w-6 h-6 rounded-full day-color-indicator bg-gray-200 dark:bg-gray-600";
+            dayIndicatorCircle.title = dateString;
+
+            dayDiv.appendChild(dayNameSpan);
+            dayDiv.appendChild(dayIndicatorCircle);
+            weeklySummaryDaysContainer.appendChild(dayDiv);
+          }
+        }
+
+        const dayDivs =
+          weeklySummaryDaysContainer.querySelectorAll("div[data-date]");
+        const percentagePromises = [];
+        dayDivs.forEach((dayDiv) => {
+          const dateString = dayDiv.dataset.date;
+          percentagePromises.push(
+            getCompletionPercentageForDate(dateString).then((percentage) => ({
+              dateString,
+              percentage,
+            }))
+          );
+        });
+
+        try {
+          const results = await Promise.all(percentagePromises);
+          results.forEach(({ dateString, percentage }) => {
+            const dayDivToUpdate = weeklySummaryDaysContainer.querySelector(
+              `div[data-date="${dateString}"]`
+            );
+            if (dayDivToUpdate) {
+              const dayIndicatorCircle = dayDivToUpdate.querySelector(
+                ".day-color-indicator"
+              );
+              if (dayIndicatorCircle) {
+                dayIndicatorCircle.title = `${dateString}: ${
+                  percentage === -1 ? "No tasks" : percentage + "%"
+                }`;
+                dayIndicatorCircle.className =
+                  "w-6 h-6 rounded-full day-color-indicator";
+
+                let colorClasses = [];
+                if (percentage === -1) {
+                  colorClasses = ["bg-gray-100", "dark:bg-gray-700"];
+                } else if (percentage === 0) {
+                  colorClasses = ["bg-gray-300", "dark:bg-gray-500"];
+                } else if (percentage > 0 && percentage < 50) {
+                  colorClasses = ["bg-danger-light", "dark:bg-danger-DEFAULT"];
+                } else if (percentage >= 50 && percentage < 100) {
+                  colorClasses = [
+                    "bg-warning-light",
+                    "dark:bg-warning-DEFAULT",
+                  ];
+                } else if (percentage === 100) {
+                  colorClasses = [
+                    "bg-success-light",
+                    "dark:bg-success-DEFAULT",
+                  ];
+                } else {
+                  colorClasses = ["bg-gray-200", "dark:bg-gray-600"];
+                }
+                dayIndicatorCircle.classList.add(...colorClasses);
+              }
+            }
+          });
+        } catch (error) {
+          console.error(
+            "[WeeklySummary] Error during color update promises:",
+            error
+          );
+        }
+      }
+
+      async function applyTasksForNext30Days(mode) {
+        if (!userId) return;
+        const currentDateStr = dailyCalendar.selectedDates[0]
+          ? flatpickr.formatDate(dailyCalendar.selectedDates[0], "Y-m-d")
+          : getCurrentDateString();
+
+        const tasksToApplySource = [];
+        dailyTaskList.querySelectorAll("li.task-item").forEach((li) => {
+          const textSpan = li.querySelector("span");
+          const checkbox = li.querySelector('input[type="checkbox"]');
+          if (textSpan && checkbox) {
+            tasksToApplySource.push({
+              id: crypto.randomUUID(),
+              text: textSpan.textContent,
+              completed: checkbox.checked,
+              createdAt: Timestamp.now(),
+            });
+          }
+        });
+
+        const t = translations[currentLanguage];
+        showModal(
+          t.applyTasksConfirmTitle(mode),
+          t.applyTasksConfirmMsg(mode),
+          "confirm",
+          async () => {
+            try {
+              if (
+                tasksToApplySource.length === 0 &&
+                (mode === "replace" || mode === "add")
+              ) {
+                showModal(t.infoModalTitle, t.noTasksToApplyError, "alert");
+                return;
+              }
+              const batch = writeBatch(db);
+              const startDate = new Date(currentDateStr + "T00:00:00Z");
+
+              for (let i = 0; i < 30; i++) {
+                const targetDate = new Date(startDate);
+                targetDate.setUTCDate(startDate.getUTCDate() + i + 1);
+                const targetDateStr = targetDate.toISOString().split("T")[0];
+                const targetDocRef = doc(
+                  db,
+                  `artifacts/${appId}/users/${userId}/dailyTasksByDate/${targetDateStr}`
+                );
+
+                const newInstancesForTargetDay = tasksToApplySource.map(
+                  (task) => ({
+                    ...task,
+                    id: crypto.randomUUID(),
+                    completed: false,
+                    createdAt: Timestamp.now(),
+                  })
+                );
+
+                if (mode === "replace") {
+                  batch.set(targetDocRef, { tasks: newInstancesForTargetDay });
+                } else {
+                  const targetSnap = await getDoc(targetDocRef);
+                  let existing =
+                    targetSnap.exists() &&
+                    Array.isArray(targetSnap.data().tasks)
+                      ? targetSnap.data().tasks
+                      : [];
+                  const filteredNew = newInstancesForTargetDay.filter(
+                    (nt) => !existing.some((et) => et.text === nt.text)
+                  );
+                  batch.set(
+                    targetDocRef,
+                    { tasks: [...existing, ...filteredNew] },
+                    { merge: true }
+                  );
+                }
+              }
+              await batch.commit();
+              showModal(
+                t.successModalTitle,
+                t.tasksAppliedSuccess(mode),
+                "alert",
+                null,
+                [mode]
+              );
+            } catch (e) {
+              console.error(`Error applying tasks (${mode}):`, e);
+              showModal(
+                t.errorModalTitle,
+                `${t.couldNotApplyTasksError} ${e.message}`,
+                "alert"
+              );
+            }
+          },
+          [mode]
+        );
+      }
+
+      async function removeTasksForNext30Days() {
+        if (!userId) return;
+        const t = translations[currentLanguage];
+        showModal(
+          t.removeNext30DaysTitle,
+          t.removeNext30Confirm,
+          "confirm",
+          async () => {
+            try {
+              const batch = writeBatch(db);
+              const startDate = new Date(
+                dailyCalendar.selectedDates[0]
+                  ? flatpickr.formatDate(
+                      dailyCalendar.selectedDates[0],
+                      "Y-m-d"
+                    )
+                  : getCurrentDateString() + "T00:00:00Z"
+              );
+              for (let i = 0; i < 30; i++) {
+                const targetDate = new Date(startDate);
+                targetDate.setUTCDate(startDate.getUTCDate() + i + 1);
+                const targetDateStr = targetDate.toISOString().split("T")[0];
+                batch.set(
+                  doc(
+                    db,
+                    `artifacts/${appId}/users/${userId}/dailyTasksByDate/${targetDateStr}`
+                  ),
+                  { tasks: [] }
+                );
+              }
+              await batch.commit();
+              showModal(
+                t.successModalTitle,
+                t.removeNext30DaysSuccess,
+                "alert"
+              );
+            } catch (e) {
+              console.error("Error removing next 30 days tasks:", e);
+              showModal(
+                t.errorModalTitle,
+                `${t.couldNotRemoveTasksError} ${e.message}`,
+                "alert"
+              );
+            }
+          }
+        );
+      }
+
+      async function removeGoalsForCurrentMonth() {
+        if (!userId) return;
+        const selectedMonth = monthlyGoalPicker.value;
+        const t = translations[currentLanguage];
+        if (!selectedMonth) {
+          showModal(t.errorModalTitle, t.noMonthSelectedError, "alert");
+          return;
+        }
+        showModal(
+          t.removeCurrentMonthGoals,
+          t.removeCurrentMonthGoalsConfirm(selectedMonth),
+          "confirm",
+          async () => {
+            try {
+              await setDoc(
+                doc(
+                  db,
+                  `artifacts/${appId}/users/${userId}/monthlyGoalsByMonth/${selectedMonth}`
+                ),
+                { goals: [] },
+                { merge: true }
+              );
+              showModal(
+                t.successModalTitle,
+                t.goalsRemovedSuccess(selectedMonth),
+                "alert",
+                null,
+                [selectedMonth]
+              );
+            } catch (e) {
+              console.error("Error removing current month goals:", e);
+              showModal(
+                t.errorModalTitle,
+                `${t.couldNotRemoveGoalsError} ${e.message}`,
+                "alert"
+              );
+            }
+          },
+          [selectedMonth]
+        );
+      }
+      applyNext30AddBtn.addEventListener("click", () =>
+        applyTasksForNext30Days("add")
+      );
+      applyNext30ReplaceBtn.addEventListener("click", () =>
+        applyTasksForNext30Days("replace")
+      );
+      removeNext30Btn.addEventListener("click", removeTasksForNext30Days);
+      removeCurrentMonthGoalsBtn.addEventListener(
+        "click",
+        removeGoalsForCurrentMonth
+      );
+
+      function setFooterYear() {
+        const yr = new Date().getFullYear();
+        document.getElementById("auth-current-year").textContent = yr;
+        document.getElementById("app-current-year").textContent = yr;
+      }
+      setFooterYear();
+      (async () => {
+        if (typeof __firebase_config !== "undefined") {
+          if (
+            typeof __initial_auth_token !== "undefined" &&
+            __initial_auth_token
+          ) {
+            try {
+              console.log("Signing in with custom token...");
+              await signInWithCustomToken(auth, __initial_auth_token);
+              console.log("Custom token sign-in success.");
+            } catch (e) {
+              console.error("Custom token sign-in error:", e);
+            }
+          } else {
+            console.log(
+              "No initial auth token. Waiting for onAuthStateChanged."
+            );
+          }
+        } else {
+          console.warn(
+            "Firebase config not defined. Ensure `firebaseConfig` is correctly set up if not in Canvas environment."
+          );
+          authView.classList.remove("hidden");
+          appView.classList.add("hidden");
+        }
+      })();
+    </script>
+  </body>
+</html>
